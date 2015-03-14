@@ -34,7 +34,7 @@ namespace JSONAPI.ActionFilters
 
             var selectors = new List<Tuple<bool, Expression<Func<T, object>>>>();
 
-            var usedProperties = new Dictionary<PropertyInfo, object>();
+            var usedProperties = new Dictionary<ModelProperty, object>();
 
             var sortExpressions = sortParam.Value.Split(',');
             foreach (var sortExpression in sortExpressions)
@@ -57,18 +57,13 @@ namespace JSONAPI.ActionFilters
                     throw new QueryableTransformException(string.Format("The attribute \"{0}\" does not exist on type \"{1}\".",
                         propertyName, _modelManager.GetResourceTypeNameForType(typeof (T))));
 
-                var property = modelProperty.Property;
-                
-                if (usedProperties.ContainsKey(property))
+                if (usedProperties.ContainsKey(modelProperty))
                     throw new QueryableTransformException(string.Format("The attribute \"{0}\" was specified more than once.", propertyName));
 
-                usedProperties[property] = null;
+                usedProperties[modelProperty] = null;
 
-                var paramExpr = Expression.Parameter(typeof (T));
-                var propertyExpr = Expression.Property(paramExpr, property);
-                var selector = Expression.Lambda<Func<T, object>>(propertyExpr, paramExpr);
-
-                selectors.Add(Tuple.Create(ascending, selector));
+                var selector = modelProperty.GetValueExpression();
+                selectors.Add(Tuple.Create(ascending, (Expression<Func<T, object>>)selector));
             }
 
             var firstSelector = selectors.First();

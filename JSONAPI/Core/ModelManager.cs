@@ -3,6 +3,7 @@ using JSONAPI.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using JSONAPI.Extensions;
 using Newtonsoft.Json;
@@ -33,7 +34,7 @@ namespace JSONAPI.Core
         /// <summary>
         /// Represents a type's registration with a model manager
         /// </summary>
-        protected sealed class TypeRegistration
+        protected sealed class TypeRegistration : ITypeRegistration
         {
             internal TypeRegistration() { }
 
@@ -55,7 +56,20 @@ namespace JSONAPI.Core
             /// <summary>
             /// A resource's properties, keyed by name.
             /// </summary>
-            public IReadOnlyDictionary<string, ModelProperty> Properties { get; internal set; }
+            public IDictionary<string, ModelProperty> Properties { get; internal set; }
+
+            public void AddCustomField<T>(string jsonKey, Expression<Func<T, object>> expression)
+            {
+                if (typeof (T) != Type)
+                    throw new Exception(
+                        String.Format("The generic type parameter {0} is not the same as the registered type {1}.",
+                            typeof (T).Name, Type.Name));
+
+                if (Properties.ContainsKey(jsonKey))
+                    throw new Exception(String.Format("The json key {0} is already in use for another property.", jsonKey));
+
+                Properties.Add(jsonKey, new CustomFieldProperty<T>(expression, jsonKey, false));
+            }
         }
 
         protected readonly IDictionary<string, TypeRegistration> RegistrationsByName;
@@ -189,8 +203,7 @@ namespace JSONAPI.Core
                         propertyMap[jsonKey] = property;
                     }
 
-                    registration.Properties = new ReadOnlyDictionary<string, ModelProperty>(propertyMap);
-
+                    registration.Properties = propertyMap;
 
                     RegistrationsByType.Add(type, registration);
                     RegistrationsByName.Add(resourceTypeName, registration);

@@ -162,6 +162,9 @@
     <EmbeddedResource Include="Acceptance\Fixtures\Posts\Responses\PatchWithToManyEmptyDataUpdateResponse.json" />
     <EmbeddedResource Include="Acceptance\Fixtures\Posts\Requests\PatchWithToManyEmptyDataUpdateRequest.json" />
     <EmbeddedResource Include="Acceptance\Fixtures\Heterogeneous\Responses\GetSearchResultsResponse.json" />
+    <None Include="Acceptance\Data\UserGroupMembership.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="App.Config">
       <SubType>Designer</SubType>
     </None>

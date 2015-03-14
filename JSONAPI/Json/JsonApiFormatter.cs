@@ -188,59 +188,69 @@ namespace JSONAPI.Json
 
             foreach (var modelProperty in props)
             {
-                var prop = modelProperty.Property;
-                if (prop == idProp) continue; // Don't write the "id" property twice, see above!
+                if (modelProperty.IgnoreByDefault) continue; // TODO: allow overriding this
 
-                if (modelProperty is FieldModelProperty)
+                var relationshipModelProperty = modelProperty as RelationshipModelProperty;
+                if (relationshipModelProperty != null)
                 {
-                    if (modelProperty.IgnoreByDefault) continue; // TODO: allow overriding this
+                    relationshipModelProperties.Add(relationshipModelProperty);
+                    continue;
+                }
 
-                    // numbers, strings, dates...
-                    writer.WritePropertyName(modelProperty.JsonKey);
+                object propertyValue = null;
 
-                    var propertyValue = prop.GetValue(value, null);
+                var fieldModelProperty = modelProperty as FieldModelProperty;
+                if (fieldModelProperty != null)
+                {
+                    var prop = fieldModelProperty.Property;
+                    if (prop == idProp) continue; // Don't write the "id" property twice, see above!
+                }
 
-                    if (prop.PropertyType == typeof (Decimal) || prop.PropertyType == typeof (Decimal?))
+                // numbers, strings, dates...
+                writer.WritePropertyName(modelProperty.JsonKey);
+                
+                if (fieldModelProperty != null)
+                {
+                    var prop = fieldModelProperty.Property;
+                    if (prop == idProp) continue; // Don't write the "id" property twice, see above!
+                }
+                propertyValue = modelProperty.GetValue(value);
+
+                if (modelProperty is ComplexAttributeModelProperty)
+                {
+                    if (propertyValue == null)
                     {
-                        if (propertyValue == null)
-                            writer.WriteNull();
-                        else
-                            writer.WriteValue(propertyValue.ToString());
-                    }
-                    else if (prop.PropertyType == typeof (string) &&
-                        prop.GetCustomAttributes().Any(attr => attr is SerializeStringAsRawJsonAttribute))
-                    {
-                        if (propertyValue == null)
-                        {
-                            writer.WriteNull();
-                        }
-                        else
-                        {
-                            var json = (string) propertyValue;
-                            if (ValidateRawJsonStrings)
-                            {
-                                try
-                                {
-                                    var token = JToken.Parse(json);
-                                    json = token.ToString();
-                                }
-                                catch (Exception)
-                                {
-                                    json = "{}";
-                                }
-                            }
-                            var valueToSerialize = JsonHelpers.MinifyJson(json);
-                            writer.WriteRawValue(valueToSerialize);
-                        }
+                        writer.WriteNull();
                     }
                     else
                     {
-                        serializer.Serialize(writer, propertyValue);
+                        var json = (string) propertyValue;
+                        if (ValidateRawJsonStrings)
+                        {
+                            try
+                            {
+                                var token = JToken.Parse(json);
+                                json = token.ToString();
+                            }
+                            catch (Exception)
+                            {
+                                json = "{}";
+                            }
+                        }
+                        var valueToSerialize = JsonHelpers.MinifyJson(json);
+                        writer.WriteRawValue(valueToSerialize);
                     }
                 }
-                else if (modelProperty is RelationshipModelProperty)
+                else if (modelProperty is DecimalFieldModelProperty)
                 {
-                    relationshipModelProperties.Add((RelationshipModelProperty)modelProperty);
+                    if (propertyValue == null)
+                        writer.WriteNull();
+                    else
+                        writer.WriteValue(propertyValue.ToString());
+                }
+                else
+                {
+                    serializer.Serialize(writer, propertyValue);
                 }
             }
 

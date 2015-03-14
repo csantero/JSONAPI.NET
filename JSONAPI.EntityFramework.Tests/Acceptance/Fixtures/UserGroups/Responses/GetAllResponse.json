@@ -4,6 +4,7 @@
             "type": "user-groups",
             "id": "501",
             "name": "Admin users",
+            "numUsers": 3,
             "links": {
                 "users": [ ]
             }

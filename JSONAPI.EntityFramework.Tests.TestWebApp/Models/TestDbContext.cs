@@ -33,6 +33,12 @@ namespace JSONAPI.EntityFramework.Tests.TestWebApp.Models
                 .HasMany(p => p.Tags)
                 .WithMany(t => t.Posts)
                 .Map(c => c.MapLeftKey("PostId").MapRightKey("TagId").ToTable("PostTagLink"));
+
+            modelBuilder
+                .Entity<UserGroup>()
+                .HasMany(ug => ug.Users)
+                .WithMany(u => u.UserGroups)
+                .Map(c => c.MapLeftKey("UserGroupId").MapRightKey("UserId").ToTable("UserGroupMembership"));
         }
 
         public DbSet<Comment> Comments { get; set; }
