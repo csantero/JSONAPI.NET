@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
+using JSONAPI.Attributes;
+using Newtonsoft.Json;
 
 namespace JSONAPI.Core
 {
@@ -40,7 +43,19 @@ namespace JSONAPI.Core
         internal FieldModelProperty(PropertyInfo property, string jsonKey, bool ignoreByDefault)
             : base(property, jsonKey, ignoreByDefault)
         {
+            var attr = property.GetCustomAttributes(false).FirstOrDefault(a => a is UsesFilterExpressionProviderAttribute) as UsesFilterExpressionProviderAttribute;
+            if (attr != null)
+            {
+                var providerType = attr.ProviderType;
+                FilterExpressionProvider = Activator.CreateInstance(providerType) as IFilterExpressionProvider;
+                if (FilterExpressionProvider == null) throw new Exception("The type provided was not an IFilterExpressionProvider.");
+            }
         }
+
+        /// <summary>
+        /// The provider to use when trying to build an expression for filtering by this property.
+        /// </summary>
+        public IFilterExpressionProvider FilterExpressionProvider { get; private set; }
     }
 
     /// <summary>

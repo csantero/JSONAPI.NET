@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Web.Http;
 using FluentAssertions;
 using JSONAPI.ActionFilters;
+using JSONAPI.Attributes;
 using JSONAPI.Core;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -69,6 +72,19 @@ namespace JSONAPI.Tests.ActionFilters
             public SomeUnknownType UnknownTypeField { get; set; }
             public RelatedItemWithId ToOneRelatedItem { get; set; }
             public ICollection<RelatedItemWithId> ToManyRelatedItems { get; set; }
+
+            public string Foo { get; set; }
+
+            [UsesFilterExpressionProvider(typeof(FooFilterProvider))]
+            public string CustomFilterProviderField { get; set; }
+        }
+
+        private class FooFilterProvider : IFilterExpressionProvider
+        {
+            public LambdaExpression BuildExpression(PropertyInfo prop, string queryValue, ParameterExpression param)
+            {
+                throw new NotImplementedException();
+            }
         }
 
         private IList<Dummy> _fixtures;
@@ -528,6 +544,22 @@ namespace JSONAPI.Tests.ActionFilters
                         new RelatedItemWithId { Id = "1121", Name = "Related sample 5" },
                         new RelatedItemWithId { Id = "1122", Name = "Related sample 6" }
                     }
+                },
+
+                #endregion
+
+                #region Custom filter provider
+
+                new Dummy
+                {
+                    Id = "1130",
+                    Foo = "3"
+                },
+
+                new Dummy
+                {
+                    Id = "1131",
+                    Foo = "4"
                 }
 
                 #endregion
@@ -1156,6 +1188,18 @@ namespace JSONAPI.Tests.ActionFilters
             var returnedArray = GetArray("http://api.example.com/dummies?stringField=String value 2&enumField=3");
             returnedArray.Length.Should().Be(1);
             returnedArray[0].Id.Should().Be("102");
+        }
+
+        #endregion
+
+        #region Custom filter provider
+
+        [TestMethod]
+        public void Filters_by_property_with_custom_filter_provider()
+        {
+            var returnedArray = GetArray("http://api.example.com/dummies?customFilterProviderField=3");
+            returnedArray.Length.Should().Be(1);
+            returnedArray[0].Id.Should().Be("1130");
         }
 
         #endregion
