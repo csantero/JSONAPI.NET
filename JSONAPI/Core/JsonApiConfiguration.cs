@@ -140,6 +140,7 @@ namespace JSONAPI.Core
             httpConfig.Formatters.Clear();
             httpConfig.Formatters.Add(formatter);
 
+            httpConfig.Filters.Add(new ErrorHandlingFilter());
             httpConfig.Filters.Add(new JsonApiQueryableAttribute(enumerationTransformer, filteringTransformer, sortingTransformer, paginationTransformer));
 
             httpConfig.Services.Replace(typeof (IHttpControllerSelector),
