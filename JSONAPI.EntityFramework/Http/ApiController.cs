@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using JSONAPI.Core;
+using JSONAPI.Json;
 
 namespace JSONAPI.EntityFramework.Http
 {
@@ -12,6 +13,12 @@ namespace JSONAPI.EntityFramework.Http
         where T : class // hmm...see http://stackoverflow.com/a/6451237/489116
         where TC : DbContext
     {
+        public ApiController(IModelManager modelManager)
+            : base(modelManager)
+        {
+            
+        }
+
         private EntityFrameworkMaterializer _materializer = null;
 
         protected override JSONAPI.Core.IMaterializer MaterializerFactory()
@@ -39,42 +46,37 @@ namespace JSONAPI.EntityFramework.Http
             return ((EntityFrameworkMaterializer)materializer).DbContext.Set<T>();
         }
 
-        public override async Task<IList<T>> Post(IList<T> postedObjs)
+        public override async Task<IJsonApiResponse> Post(IPayload payload)
         {
             var materializer = this.MaterializerFactory<EntityFrameworkMaterializer>();
-            List<T> materialList = new List<T>();
-            foreach (T postedObj in postedObjs)
+
+            var primaryData = ExtractFromPayload(payload);
+            DbContext context = materializer.DbContext;
+            var material = await materializer.MaterializeUpdateAsync(primaryData);
+            if (context.Entry<T>(material).State == EntityState.Added)
             {
-                DbContext context = materializer.DbContext;
-                var material = await materializer.MaterializeUpdateAsync(postedObj);
-                if (context.Entry<T>(material).State == EntityState.Added)
-                {
-                    await context.SaveChangesAsync();
-                    materialList.Add(material);
-                }
-                else
-                {
-                    // POST should only create an object--if the EntityState is Unchanged or Modified, this is an illegal operation.
-                    var e = new System.Web.Http.HttpResponseException(System.Net.HttpStatusCode.BadRequest);
-                    //e.InnerException = new ArgumentException("The POSTed object already exists!"); // Can't do this, I guess...
-                    throw e;
-                }
+                await context.SaveChangesAsync();
             }
-            return materialList;
+            else
+            {
+                // POST should only create an object--if the EntityState is Unchanged or Modified, this is an illegal operation.
+                var e = new System.Web.Http.HttpResponseException(System.Net.HttpStatusCode.BadRequest);
+                //e.InnerException = new ArgumentException("The POSTed object already exists!"); // Can't do this, I guess...
+                throw e;
+            }
+
+            return CreateSingleResultResponse(material);
         }
 
-        public override async Task<IList<T>> Patch(string id, IList<T> putObjs)
+        public override async Task<IJsonApiResponse> Patch(string id, IPayload payload)
         {
             var materializer = this.MaterializerFactory<EntityFrameworkMaterializer>();
+            var primaryData = ExtractFromPayload(payload);
             DbContext context = materializer.DbContext;
-            List<T> materialList = new List<T>();
-            foreach (T putObj in putObjs)
-            {
-                var material = await materializer.MaterializeUpdateAsync(putObj);
-                materialList.Add(material);
-            }
+            var material = await materializer.MaterializeUpdateAsync(primaryData);
             await context.SaveChangesAsync();
-            return materialList;
+
+            return CreateSingleResultResponse(material);
         }
 
         public override async Task Delete(string id)

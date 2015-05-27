@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using System.Reflection;
 using JSONAPI.Core;
+using JSONAPI.Json;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace JSONAPI.Http
 {
@@ -15,6 +18,14 @@ namespace JSONAPI.Http
     public class ApiController<T> : System.Web.Http.ApiController
         where T : class
     {
+        private readonly IModelManager _modelManager;
+
+        /// <param name="modelManager">The model manager used to look up registered types</param>
+        public ApiController(IModelManager modelManager)
+        {
+            _modelManager = modelManager;
+        }
+
         protected virtual IMaterializer MaterializerFactory()
         {
             return null;
@@ -44,16 +55,16 @@ namespace JSONAPI.Http
         /// it with the [System.Web.OData.EnableQuery] attribute.
         /// </summary>
         /// <returns></returns>
-        public virtual IQueryable<T> Get()
+        public virtual IJsonApiResponse Get()
         {
             IMaterializer materializer = MaterializerFactory();
 
             IQueryable<T> es = QueryableFactory(materializer);
 
-            return es;
+            return CreateQueryableResponse(es);
         }
 
-        public virtual async Task<IEnumerable<T>> Get(string id)
+        public virtual async Task<IJsonApiResponse> Get(string id)
         {
             IMaterializer materializer = MaterializerFactory();
 
@@ -75,7 +86,7 @@ namespace JSONAPI.Http
                     results.Add(hit);
                 }
             }
-            return results;
+            return CreateCollectionResponse(results);
         }
 
         /// <summary>
@@ -85,15 +96,14 @@ namespace JSONAPI.Http
         /// that the POST operation return the POSTed object. It should probably be
         /// overridden in any implementation.
         /// </summary>
-        /// <param name="postedObj"></param>
+        /// <param name="payload">The payload object</param>
         /// <returns></returns>
-        public virtual Task<IList<T>> Post([FromBody] IList<T> postedObjs)
+        public virtual Task<IJsonApiResponse> Post(IPayload payload)
         {
-            foreach(T postedObj in postedObjs)
-            {
-                IMaterializer materializer = this.MaterializerFactory();
-            }
-            return Task.FromResult(postedObjs);
+            var primaryData = ExtractFromPayload(payload);
+
+            var returnPayload = CreateSingleResultResponse(primaryData);
+            return Task.FromResult(returnPayload);
         }
 
         /// <summary>
@@ -103,15 +113,14 @@ namespace JSONAPI.Http
         /// <param name="id"></param>
         /// <param name="payload"></param>
         /// <returns></returns>
-        public virtual async Task<IList<T>> Patch(string id, IList<T> putObjs)
+        public virtual async Task<IJsonApiResponse> Patch(string id, IPayload payload)
         {
-            IMaterializer materializer = this.MaterializerFactory();
-            IList<T> materialList = new List<T>();
-            foreach (T putObj in putObjs)
-            {
-                materialList.Add(await materializer.MaterializeUpdateAsync<T>(putObj));
-            }
-            return materialList;
+            var primaryData = ExtractFromPayload(payload);
+
+            IMaterializer materializer = MaterializerFactory();
+            var materialized = await materializer.MaterializeUpdateAsync(primaryData);
+
+            return CreateSingleResultResponse(materialized);
         }
 
         /// <summary>
@@ -121,6 +130,47 @@ namespace JSONAPI.Http
         public virtual Task Delete(string id)
         {
             return Task.FromResult(0);
+        }
+
+        /// <summary>
+        /// Creates a .NET object from a json-api payload
+        /// </summary>
+        /// <param name="payload">The request payload</param>
+        /// <returns>A .NET object of type T</returns>
+        protected virtual T ExtractFromPayload(IPayload payload)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Creates a json-api response for a single result.
+        /// </summary>
+        /// <param name="result">The result</param>
+        /// <returns>A response for this result</returns>
+        protected IJsonApiResponse CreateSingleResultResponse(T result)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Creates a json-api response for an IQueryable.
+        /// </summary>
+        /// <param name="result">The queryable result</param>
+        /// <returns>A response for this result</returns>
+        protected IJsonApiResponse CreateQueryableResponse(IQueryable<T> result)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Creates a json-api response for a result collection. Note: If returning
+        /// an IQueryable, you should use CreateQueryableResponse instead.
+        /// </summary>
+        /// <param name="result">The collection result</param>
+        /// <returns>A response for this result</returns>
+        protected IJsonApiResponse CreateCollectionResponse(IEnumerable<T> result)
+        {
+            throw new NotImplementedException();
         }
     }
 }

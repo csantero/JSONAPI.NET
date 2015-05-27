@@ -394,7 +394,7 @@ namespace JSONAPI.Tests.Json
         {
             // Arrange
             var modelManager = new ModelManager(new PluralizationService());
-            var formatter = new JsonApiFormatter(modelManager, new MockErrorSerializer());
+            var formatter = new JsonApiFormatter(new PayloadFormatter(modelManager), new MockErrorSerializer());
             var stream = new MemoryStream();
 
             // Act

@@ -199,7 +199,7 @@ namespace JSONAPI.Core
                             throw new InvalidOperationException(
                                 String.Format("The type `{0}` already contains a property keyed at `{1}`.",
                                     resourceTypeName, jsonKey));
-                        var property = CreateModelProperty(prop, jsonKey);
+                        var property = CreateModelProperty(prop, resourceTypeName, jsonKey);
                         propertyMap[jsonKey] = property;
                     }
 
@@ -218,9 +218,10 @@ namespace JSONAPI.Core
         /// Creates a cacheable model property representation from a PropertyInfo
         /// </summary>
         /// <param name="prop">The property</param>
+        /// <param name="objectType">The resource type name of the object that contains this property</param>
         /// <param name="jsonKey">The key that this model property will be serialized as</param>
         /// <returns>A model property represenation</returns>
-        protected virtual ModelProperty CreateModelProperty(PropertyInfo prop, string jsonKey)
+        protected virtual ModelProperty CreateModelProperty(PropertyInfo prop, string objectType, string jsonKey)
         {
             var type = prop.PropertyType;
             var ignoreByDefault =
@@ -242,7 +243,7 @@ namespace JSONAPI.Core
             {
                 relatedType = type;
             }
-            return new RelationshipModelProperty(prop, jsonKey, ignoreByDefault, relatedType, isToMany);
+            return new RelationshipModelProperty(prop, objectType, jsonKey, ignoreByDefault, relatedType, isToMany);
         }
 
         /// <summary>

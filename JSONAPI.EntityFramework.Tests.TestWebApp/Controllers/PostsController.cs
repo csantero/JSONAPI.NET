@@ -8,7 +8,8 @@ namespace JSONAPI.EntityFramework.Tests.TestWebApp.Controllers
     {
         protected readonly TestDbContext DbContext;
 
-        public PostsController(TestDbContext dbContext)
+        public PostsController(TestDbContext dbContext, IModelManager modelManager)
+            : base(modelManager)
         {
             DbContext = dbContext;
         }

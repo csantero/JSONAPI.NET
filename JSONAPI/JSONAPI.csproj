@@ -94,13 +94,30 @@
     <Compile Include="Extensions\TypeExtensions.cs" />
     <Compile Include="Http\ApiController.cs" />
     <Compile Include="Http\PascalizedControllerSelector.cs" />
+    <Compile Include="Json\BadRequestException.cs" />
     <Compile Include="Json\ErrorSerializer.cs" />
     <Compile Include="Json\GuidErrorIdProvider.cs" />
     <Compile Include="Json\IErrorIdProvider.cs" />
     <Compile Include="Json\IErrorSerializer.cs" />
     <Compile Include="Json\JsonApiFormatter.cs" />
     <Compile Include="Json\JsonHelpers.cs" />
+    <Compile Include="Json\IJsonApiResponse.cs" />
+    <Compile Include="Json\IPayload.cs" />
+    <Compile Include="Json\IPayloadFormatter.cs" />
+    <Compile Include="Json\IRelationship.cs" />
+    <Compile Include="Json\IResourceObject.cs" />
+    <Compile Include="Json\GenericJsonApiResponse.cs" />
+    <Compile Include="Json\PayloadBase.cs" />
+    <Compile Include="Json\QueryableResponse.cs" />
+    <Compile Include="Json\Relationship.cs" />
+    <Compile Include="Json\ResourceCollectionPayload.cs" />
+    <Compile Include="Json\SingleResourcePayload.cs" />
+    <Compile Include="Json\PayloadFormatter.cs" />
+    <Compile Include="Json\ToManyRelationship.cs" />
+    <Compile Include="Json\ResourceObject.cs" />
+    <Compile Include="Json\SingleResultResponse.cs" />
     <Compile Include="Json\RelationAggregator.cs" />
+    <Compile Include="Json\ToOneRelationship.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
